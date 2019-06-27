@@ -1,6 +1,7 @@
 "use strict";
 
 const express = require(`express`);
+const morgan = require(`morgan`);
 const mongoose = require(`mongoose`);
 const bodyParser = require(`body-parser`);
 const passport = require(`passport`);
@@ -8,6 +9,10 @@ const passport = require(`passport`);
 const users = require(`./src/routes/api/users`);
 
 const app = express();
+
+// Morgan, log every request
+app.use(morgan(`combined`));
+
 // Bodyparser middleware
 app.use(
 	bodyParser.urlencoded({
