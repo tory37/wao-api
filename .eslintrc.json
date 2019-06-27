@@ -1,0 +1,9 @@
+{
+	"extends": ["strongloop", "prettier"],
+	"parserOptions": {
+		"ecmaVersion": 2017
+	},
+	"rules": {
+		"quotes": [2, "backtick", { "avoidEscape": true }]
+	}
+}
