@@ -17,10 +17,16 @@ const { addErrorMessages, createErrorObject, hasErrors } = require(`../../utils/
 router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, next) => {
 	const errorObject = createErrorObject();
 
-	const id = req.body.id;
-	User.findOne({ id }).then(user => {
+	const id = req.user._id;
+
+	if (!id) {
+		addErrorMessages(errorObject, `Bad auth provided.`);
+		return res.status(404).json(errorObject);
+	}
+
+	User.findOne({ _id: id }).then(user => {
 		if (!user) {
-			addErrorMessages(errorObject, `User with id \${id} not found`);
+			addErrorMessages(errorObject, `User not found`);
 			return res.status(404).json(errorObject);
 		} else {
 			return res.status(200).json({
@@ -131,9 +137,11 @@ router.post(`/login`, (req, res) => {
 							success: true,
 							token: `Bearer ` + token,
 							user: {
-								id: user.id,
 								username: user.username,
-								email: user.email
+								email: user.email,
+								lastModifiedDate: user.lastModifiedDate,
+								roles: user.roles,
+								createdDate: user.createdDate
 							}
 						});
 					}
