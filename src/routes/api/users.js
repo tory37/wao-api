@@ -24,7 +24,7 @@ router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 		return res.status(404).json(errorObject);
 	}
 
-	User.findOne({ _id: id }).then(user => {
+	User.findOne({ _id: id }, { upsert: false }).then(user => {
 		if (!user) {
 			addErrorMessages(errorObject, `User not found`);
 			return res.status(404).json(errorObject);
@@ -32,9 +32,9 @@ router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 			return res.status(200).json({
 				username: user.username,
 				email: user.email,
-				lastModifiedDate: user.lastModifiedDate,
+				createdAt: user.createdAt,
 				roles: user.roles,
-				createdDate: user.createdDate
+				updatedAt: user.updatedAt
 			});
 		}
 	});
@@ -139,9 +139,9 @@ router.post(`/login`, (req, res) => {
 							user: {
 								username: user.username,
 								email: user.email,
-								lastModifiedDate: user.lastModifiedDate,
+								updatedAt: user.updatedAt,
 								roles: user.roles,
-								createdDate: user.createdDate
+								createdAt: user.createdAt
 							}
 						});
 					}
