@@ -13,12 +13,8 @@ module.exports = (data, errorObject) => {
 
 	if (!isEmpty(data.location)) {
 		data.location.address = !isEmpty(data.location.address) ? data.location.address : ``;
-		data.location.city = !isEmpty(data.location.city) ? data.location.city : ``;
-		data.location.state = !isEmpty(data.location.state) ? data.location.state : ``;
-		data.location.country = !isEmpty(data.location.country) ? data.location.country : ``;
-		data.location.zipcode = !isEmpty(data.location.zipcode) ? data.location.zipcode : ``;
 		data.location.lat = !isEmpty(data.location.lat) ? data.location.lat : ``;
-		data.location.lon = !isEmpty(data.location.lon) ? data.location.lon : ``;
+		data.location.lng = !isEmpty(data.location.lng) ? data.location.lng : ``;
 	} else {
 		data.location = ``;
 	}
@@ -48,28 +44,12 @@ module.exports = (data, errorObject) => {
 			addErrorMessages(errorObject, `Address is required`);
 		}
 
-		if (Validator.isEmpty(data.location.city)) {
-			addErrorMessages(errorObject, `City is required`);
-		}
-
-		if (Validator.isEmpty(data.location.state)) {
-			addErrorMessages(errorObject, `State is required`);
-		}
-
-		if (Validator.isEmpty(data.location.country)) {
-			addErrorMessages(errorObject, `Country is required`);
-		}
-
-		if (Validator.isEmpty(data.location.zipcode)) {
-			addErrorMessages(errorObject, `Zipcode is required`);
-		}
-
 		if (Validator.isEmpty(data.location.lat)) {
 			addErrorMessages(errorObject, `Lat is required`);
 		}
 
-		if (Validator.isEmpty(data.location.lon)) {
-			addErrorMessages(errorObject, `lon is required`);
+		if (Validator.isEmpty(data.location.lng)) {
+			addErrorMessages(errorObject, `Lng is required`);
 		}
 	}
 

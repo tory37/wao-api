@@ -27,27 +27,11 @@ const EventSchema = new Schema({
 			type: String,
 			required: true
 		},
-		city: {
-			type: String,
-			required: true
-		},
-		state: {
-			type: String,
-			required: true
-		},
-		country: {
-			type: String,
-			required: true
-		},
-		zipcode: {
-			type: String,
-			required: true
-		},
 		lat: {
 			type: Number,
 			required: true
 		},
-		lon: {
+		lng: {
 			type: Number,
 			required: true
 		}

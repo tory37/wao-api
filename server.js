@@ -5,6 +5,7 @@ const morgan = require(`morgan`);
 const mongoose = require(`mongoose`);
 const bodyParser = require(`body-parser`);
 const passport = require(`passport`);
+const cors = require(`cors`);
 
 const users = require(`./src/routes/api/users`);
 const events = require(`./src/routes/api/events`);
@@ -13,6 +14,8 @@ const app = express();
 
 // Morgan, log every request
 app.use(morgan(`combined`));
+
+app.use(cors());
 
 // Bodyparser middleware
 app.use(

@@ -101,10 +101,12 @@ router.post(`/register`, (req, res, next) => {
 // @access Public
 router.post(`/login`, (req, res) => {
 	let errorObject = createErrorObject();
+	console.log(`About to validate`);
 	// Form validation
 	const isValid = isLoginInputValid(req.body, errorObject);
 	// Check validation
 	if (!isValid) {
+		console.log(`Not Valid`);
 		return res.status(400).json(errorObject);
 	}
 	const email = req.body.email;

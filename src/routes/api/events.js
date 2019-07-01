@@ -2,16 +2,13 @@
 
 const express = require(`express`);
 const router = express.Router();
-const bcrypt = require(`bcryptjs`);
-const jwt = require(`jsonwebtoken`);
-const keys = require(`../../../config/keys`);
 const moment = require(`moment`);
 const usersHelper = require(`../../utils/usersHelper`);
 var passport = require(`passport`);
 
 // Load input validation
 const isEventCreateInputValid = require(`../../validation/eventCreate`);
-const isEventUpdateInputValid = require(`../../validation/eventUpdate`);
+// const isEventUpdateInputValid = require(`../../validation/eventUpdate`);
 
 // Load Event model
 const Event = require(`../../models/Event`);
@@ -58,14 +55,18 @@ router.put(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 			newEvent
 				.save()
 				.then(user => res.json(newEvent))
-				.catch(err => console.log(err));
+				.catch(err => {
+					addErrorMessages(errorObject, err.message);
+					return res.status(400).json(errorObject);
+				});
 		} else {
 			addErrorMessages(errorObject, `Unauthorized`);
 			return res.status(400).json(errorObject);
 		}
 	} catch (err) {
+		console.log(err);
 		addErrorMessages(errorObject, err);
-		next(errorObject);
+		return res.status(400).json(errorObject);
 	}
 });
 
