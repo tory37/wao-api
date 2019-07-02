@@ -1,5 +1,6 @@
 "use strict";
 
+require(`dotenv`).config();
 const express = require(`express`);
 const morgan = require(`morgan`);
 const mongoose = require(`mongoose`);
@@ -25,7 +26,7 @@ app.use(
 );
 app.use(bodyParser.json());
 // DB Config
-const db = require(`./config/keys`).mongoURI;
+const db = process.env.MONGO_URI;
 // Connect to MongoDB
 mongoose
 	.connect(db, { useNewUrlParser: true })
