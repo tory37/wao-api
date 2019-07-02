@@ -38,6 +38,9 @@ app.use(passport.initialize());
 // Passport config
 require(`./config/passport`)(passport);
 // Routes
+app.get(`/`, function(req, res) {
+	res.send(JSON.stringify({ Hello: `World` }));
+});
 app.use(`/api/users`, users);
 app.use(`/api/events`, events);
 
