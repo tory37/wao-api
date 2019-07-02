@@ -21,9 +21,25 @@ router.get(`/`, (req, res, next) => {
 		return res.status(400).json(errorObject);
 	}
 
-	Event.find({}).then(events => {
-		return res.status(200).json(events);
-	});
+	const nowTimestamp = moment().unix();
+
+	if (req.query.getPast) {
+		Event.find({
+			endTimestamp: {
+				$lt: nowTimestamp
+			}
+		}).then(events => {
+			return res.status(200).json(events);
+		});
+	} else {
+		Event.find({
+			endTimestamp: {
+				$gt: nowTimestamp
+			}
+		}).then(events => {
+			return res.status(200).json(events);
+		});
+	}
 });
 
 // @route PUT api/users/register
@@ -45,10 +61,12 @@ router.put(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 		if (usersHelper.isAdmin(req.user)) {
 			const newEvent = new Event({
 				imageUrl: req.body.imageUrl,
-				startDate: moment.unix(req.body.startTimestamp).toDate(),
-				endDate: moment.unix(req.body.endTimestamp).toDate(),
+				startTimestamp: req.body.startTimestamp,
+				endTimestamp: req.body.endTimestamp,
 				title: req.body.title,
-				location: req.body.location,
+				address: req.body.address,
+				lat: req.body.lat,
+				lng: req.body.lng,
 				description: req.body.description
 			});
 
@@ -65,7 +83,7 @@ router.put(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 		}
 	} catch (err) {
 		console.log(err);
-		addErrorMessages(errorObject, err);
+		addErrorMessages(errorObject, err.message);
 		return res.status(400).json(errorObject);
 	}
 });

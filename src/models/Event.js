@@ -10,11 +10,11 @@ const EventSchema = new Schema({
 		type: mongoose.SchemaTypes.Url,
 		required: true
 	},
-	startDate: {
+	startTimestamp: {
 		type: Number,
 		required: true
 	},
-	endDate: {
+	endTimestamp: {
 		type: Number,
 		required: true
 	},
@@ -22,19 +22,17 @@ const EventSchema = new Schema({
 		type: String,
 		required: true
 	},
-	location: {
-		address: {
-			type: String,
-			required: true
-		},
-		lat: {
-			type: Number,
-			required: true
-		},
-		lng: {
-			type: Number,
-			required: true
-		}
+	address: {
+		type: String,
+		required: true
+	},
+	lat: {
+		type: Number,
+		required: true
+	},
+	lng: {
+		type: Number,
+		required: true
 	},
 	description: {
 		type: String,

@@ -10,47 +10,45 @@ module.exports = (data, errorObject) => {
 	data.startTimestamp = !isEmpty(data.startTimestamp) ? data.startTimestamp : ``;
 	data.endTimestamp = !isEmpty(data.endTimestamp) ? data.endTimestamp : ``;
 	data.title = !isEmpty(data.title) ? data.title : ``;
-
-	if (!isEmpty(data.location)) {
-		data.location.address = !isEmpty(data.location.address) ? data.location.address : ``;
-		data.location.lat = !isEmpty(data.location.lat) ? data.location.lat : ``;
-		data.location.lng = !isEmpty(data.location.lng) ? data.location.lng : ``;
-	} else {
-		data.location = ``;
-	}
-
+	data.address = !isEmpty(data.address) ? data.address : ``;
+	data.lat = !isEmpty(data.lat) ? data.lat : ``;
+	data.lng = !isEmpty(data.lng) ? data.lng : ``;
 	data.description = !isEmpty(data.description) ? data.description : ``;
 
 	if (Validator.isEmpty(data.imageUrl)) {
-		addErrorMessages(errorObject, `Image Url field is required`);
+		addErrorMessages(errorObject, `Image URL field is required`);
 	}
 
-	if (Validator.isEmpty(data.startTimestamp)) {
+	if (data.startTimestamp.length === 0) {
 		addErrorMessages(errorObject, `Start timestamp is required`);
+	} else if (typeof data.startTimestamp !== `number`) {
+		addErrorMessages(errorObject, `Start Timestamp is not a valid timestamp`);
 	}
 
-	if (Validator.isEmpty(data.endTimestamp)) {
+	if (data.endTimestamp.length === 0) {
 		addErrorMessages(errorObject, `End timestamp is required`);
+	} else if (typeof data.endTimestamp !== `number`) {
+		addErrorMessages(errorObject, `End Timestamp is not a valid timestamp`);
 	}
 
 	if (Validator.isEmpty(data.title)) {
 		addErrorMessages(errorObject, `Title field is required`);
 	}
 
-	if (Validator.isEmpty(data.location)) {
-		addErrorMessages(errorObject, `Location field is required`);
-	} else {
-		if (Validator.isEmpty(data.location.address)) {
-			addErrorMessages(errorObject, `Address is required`);
-		}
+	if (Validator.isEmpty(data.address)) {
+		addErrorMessages(errorObject, `Address is required`);
+	}
 
-		if (Validator.isEmpty(data.location.lat)) {
-			addErrorMessages(errorObject, `Lat is required`);
-		}
+	if (data.lat.length === 0) {
+		addErrorMessages(errorObject, `Lat is required`);
+	} else if (typeof data.lat !== `number`) {
+		addErrorMessages(errorObject, `Lat is invalid`);
+	}
 
-		if (Validator.isEmpty(data.location.lng)) {
-			addErrorMessages(errorObject, `Lng is required`);
-		}
+	if (data.lng.length === 0) {
+		addErrorMessages(errorObject, `Lng is required`);
+	} else if (typeof data.lng !== `number`) {
+		addErrorMessages(errorObject, `Lng is invalid`);
 	}
 
 	if (Validator.isEmpty(data.description)) {
