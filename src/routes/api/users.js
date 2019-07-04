@@ -28,12 +28,14 @@ router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 			addErrorMessages(errorObject, `User not found`);
 			return res.status(404).json(errorObject);
 		} else {
+			console.log(user);
 			return res.status(200).json({
 				username: user.username,
 				email: user.email,
 				createdAt: user.createdAt,
 				roles: user.roles,
-				updatedAt: user.updatedAt
+				updatedAt: user.updatedAt,
+				imageUrl: user.imageUrl
 			});
 		}
 	});
@@ -142,7 +144,8 @@ router.post(`/login`, (req, res) => {
 								email: user.email,
 								updatedAt: user.updatedAt,
 								roles: user.roles,
-								createdAt: user.createdAt
+								createdAt: user.createdAt,
+								imageUrl: user.imageUrl
 							}
 						});
 					}
