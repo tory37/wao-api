@@ -14,7 +14,7 @@ module.exports = passport => {
 		new JwtStrategy(opts, (jwt_payload, done) => {
 			User.findById(jwt_payload.id)
 				.then(user => {
-					if (user) {
+					if (user && user.password === jwt_payload.hashedPass) {
 						return done(null, user);
 					}
 					return done(null, false);
