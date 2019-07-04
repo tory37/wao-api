@@ -38,6 +38,7 @@ router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 				roles: user.roles,
 				updatedAt: user.updatedAt,
 				imageUrl: user.imageUrl,
+				color: user.color,
 				_id: user._id
 			});
 		}
@@ -95,6 +96,10 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 					req.user.imageUrl = req.body.imageUrl;
 				}
 
+				if (req.body.color) {
+					req.user.color = req.body.color;
+				}
+
 				req.user
 					.save()
 					.then(user => {
@@ -105,6 +110,7 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 							roles: user.roles,
 							createdAt: user.createdAt,
 							imageUrl: user.imageUrl,
+							color: user.color,
 							_id: user._id
 						});
 					})
@@ -224,7 +230,8 @@ router.post(`/register`, (req, res, next) => {
 					const newUser = new User({
 						email: req.body.email,
 						password: req.body.password,
-						username: req.body.username
+						username: req.body.username,
+						color: req.body.color
 					});
 					// Hash password before saving in database
 					bcrypt.genSalt(10, (err, salt) => {
@@ -297,6 +304,7 @@ router.post(`/login`, (req, res) => {
 								roles: user.roles,
 								createdAt: user.createdAt,
 								imageUrl: user.imageUrl,
+								color: user.color,
 								_id: user._id
 							}
 						});

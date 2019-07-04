@@ -26,6 +26,11 @@ const UserSchema = new Schema(
 		},
 		imageUrl: {
 			type: String
+		},
+		color: {
+			type: String,
+			required: true,
+			default: `black`
 		}
 	},
 	{
