@@ -209,7 +209,7 @@ const sendVerificationEmail = (user, errorObject, res, req) => {
 		subject: `Account Verification`,
 		dynamic_template_data: {
 			username: user.username,
-			verificationUrl: `http://` + req.headers.origin + `/verify/` + token
+			verificationUrl: req.headers.origin + `/verify/` + token
 		},
 		template_id: `d-58838a91d5bc48e6ac85a6ba95ec01ce`
 		// text: `Hello,\n\n` + `Please verify your account by clicking the link: \nhttp://` + req.headers.origin + `/confirmation/` + token + `.\n`
