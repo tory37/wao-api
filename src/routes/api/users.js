@@ -6,11 +6,16 @@ const bcrypt = require(`bcryptjs`);
 const jwt = require(`jsonwebtoken`);
 var passport = require(`passport`);
 
+// Emails
+const sgMail = require(`@sendgrid/mail`);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 // Load input validation
 const isRegisterInputValid = require(`../../validation/register`);
 const isLoginInputValid = require(`../../validation/login`);
 const isUpdateUserInputValid = require(`../../validation/updateUser`);
 const isUpdatePasswordInputValid = require(`../../validation/updatePassword`);
+
 // Load User model
 const User = require(`../../models/User`);
 const { addErrorMessages, createErrorObject, hasErrors } = require(`../../utils/errorHandler`);
@@ -188,11 +193,46 @@ router.post(`/password`, passport.authenticate(`jwt`, { session: false }), (req,
 	}
 });
 
+const sendVerificationEmail = (user, errorObject, res, req) => {
+	if (user.isVerified) {
+		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
+	}
+
+	// Create a verification token for this user
+	const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
+		expiresIn: 86400
+	});
+
+	var email = {
+		from: `no-reply@weebsandotakus.com`,
+		to: user.email,
+		subject: `Account Verification`,
+		dynamic_template_data: {
+			username: user.username,
+			verificationUrl: `http://` + req.headers.origin + `/verify/` + token
+		},
+		template_id: `d-58838a91d5bc48e6ac85a6ba95ec01ce`
+		// text: `Hello,\n\n` + `Please verify your account by clicking the link: \nhttp://` + req.headers.origin + `/confirmation/` + token + `.\n`
+	};
+
+	// Send the email
+	sgMail.send(email, err => {
+		if (err) {
+			addErrorMessages(errorObject, `Error ocurred while sending email.  Please contact administrators.`);
+			console.log(`Error: Registration Email: `, err);
+			return res.status(500).json(errorObject);
+		}
+
+		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
+	});
+};
+
 // @route POST api/users/register
 // @desc Register user
 // @access Public
 router.post(`/register`, (req, res, next) => {
 	let errorObject = createErrorObject();
+
 	try {
 		// Form validation
 		const isValid = isRegisterInputValid(req.body, errorObject);
@@ -241,7 +281,9 @@ router.post(`/register`, (req, res, next) => {
 							newUser.password = hash;
 							newUser
 								.save()
-								.then(user => res.json(`Success! User created`))
+								.then(user => {
+									sendVerificationEmail(user, errorObject, res, req);
+								})
 								.catch(err => console.log(err));
 						});
 					});
@@ -252,6 +294,68 @@ router.post(`/register`, (req, res, next) => {
 		addErrorMessages(errorObject, err);
 		next(errorObject);
 	}
+});
+
+router.post(`/verify`, (req, res, next) => {
+	const token = req.headers[`x-access-token`];
+	let errorObject = createErrorObject();
+
+	if (!token) {
+		addErrorMessages(errorObject, `Confirmation token not provided`);
+		return res.status(401).json(errorObject);
+	}
+
+	try {
+		jwt.verify(token, process.env.SECRET_KEY, function(err, decoded) {
+			if (err) {
+				addErrorMessages(errorObject, `Failed to authenticate token.`);
+				return res.status(401).json(errorObject);
+			}
+
+			if (decoded && decoded.userId) {
+				const id = decoded.userId;
+
+				User.findOne({ _id: id }).then(user => {
+					// Check if user exists
+					if (!user) {
+						addErrorMessages(errorObject, `Failed to authenticate token.  User was not found.`);
+						return res.status(401).json(errorObject);
+					}
+
+					if (user.isVerified) {
+						return res.status(200).json(`User is already verified.`);
+					}
+
+					user.isVerified = true;
+					user.save().then(() => {
+						return res.status(200).send(`Email verified! Please login`);
+					});
+				});
+			}
+		});
+	} catch (err) {
+		addErrorMessages(errorObject, err);
+		next(errorObject);
+	}
+});
+
+router.post(`/verify/resend`, (req, res, next) => {
+	let errorObject = createErrorObject();
+
+	let email = req.body.email;
+
+	if (!email) {
+		addErrorMessages(errorObject, `Email is required`);
+		return res.status(400).json(errorObject);
+	}
+
+	User.findOne({ email }, { upsert: false }).then(user => {
+		if (!user) {
+			return res.status(200);
+		}
+
+		sendVerificationEmail(user, errorObject, res, req);
+	});
 });
 
 // @route POST api/users/login
@@ -274,11 +378,17 @@ router.post(`/login`, (req, res) => {
 		// Check if user exists
 		if (!user) {
 			addErrorMessages(errorObject, `Email not found`);
-			return res.status(400).json(errorObject);
+			return res.status(401).json(errorObject);
 		}
+
 		// Check password
 		bcrypt.compare(password, user.password).then(isMatch => {
 			if (isMatch) {
+				if (!user.isVerified) {
+					addErrorMessages(errorObject, `Your account has not been verified`);
+					return res.status(401).json(errorObject);
+				}
+
 				// User matched
 				// Create JWT Payload
 				const payload = {
@@ -311,32 +421,11 @@ router.post(`/login`, (req, res) => {
 					}
 				);
 			} else {
-				addErrorMessages(errorObject, `Password incorrect`);
-				return res.status(400).json(errorObject);
+				addErrorMessages(errorObject, `Email or password is incorrect`);
+				return res.status(401).json(errorObject);
 			}
 		});
 	});
 });
-
-// router.post(`/user/avatar`, passport.authenticate(`jwt`, ), (req, res) => {
-// 	let errorObject = createErrorObject();
-// 	const query = { email: req.user.email };
-// 	User.findOneAndUpdate(
-// 		query,
-// 		{ imageUrl: req.imageUrl },
-// 		{
-// 			runValidators: true
-// 		},
-
-// 	);
-
-// 	User.findOne({ email }).then(user => {
-// 		if (!user) {
-// 			addErrorMessages(errorObject, `User not found`);
-// 			return res.status(400).json(errorObject);
-// 		} else {
-// 		}
-// 	});
-// });
 
 module.exports = router;
