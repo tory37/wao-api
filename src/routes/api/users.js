@@ -184,7 +184,9 @@ router.post(`/password`, passport.authenticate(`jwt`, { session: false }), (req,
 							}
 						);
 					})
-					.catch(err => console.log(err));
+					.catch(err => {
+						throw err;
+					});
 			});
 		});
 	} catch (err) {
@@ -193,15 +195,76 @@ router.post(`/password`, passport.authenticate(`jwt`, { session: false }), (req,
 	}
 });
 
-const sendVerificationEmail = (user, errorObject, res, req) => {
-	if (user.isVerified) {
-		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
+router.post(`/password/update`, (req, res, next) => {
+	const errorObject = createErrorObject();
+
+	const token = req.body.token;
+
+	if (!token) {
+		addErrorMessages(errorObject, `Invalid token provided`);
+		return res.status(401).json(errorObject);
 	}
 
+	try {
+		jwt.verify(token, process.env.SECRET_KEY, function(err, decoded) {
+			if (err) {
+				addErrorMessages(errorObject, `Failed to authenticate token.`);
+				return res.status(401).json(errorObject);
+			}
+
+			if (decoded && decoded.userId) {
+				const id = decoded.userId;
+
+				User.findOne({ _id: id }).then(user => {
+					// Check if user exists
+					if (!user) {
+						addErrorMessages(errorObject, `Failed to authenticate token.  User was not found.`);
+						return res.status(401).json(errorObject);
+					}
+
+					if (user.verificationToken !== token) {
+						addErrorMessages(errorObject, `Failed to authenticate token.`);
+						return res.status(401).json(errorObject);
+					}
+
+					bcrypt.genSalt(10, (err, salt) => {
+						// Hash password before saving in database
+						if (err) throw err;
+						bcrypt.hash(req.body.password, salt, (err, hash) => {
+							if (err) throw err;
+							user.password = hash;
+							user.verificationToken = ``;
+							user.save()
+								.then(updatedUser => {
+									res.status(200).json(`Successfully reset password.  Please login`);
+								})
+								.catch(err => {
+									throw err;
+								});
+						});
+					});
+				});
+			}
+		});
+	} catch (err) {
+		addErrorMessages(errorObject, err);
+		next(errorObject);
+	}
+});
+
+const createVerificationToken = (user, errorObject, res) => {
 	// Create a verification token for this user
 	const token = jwt.sign({ userId: user._id }, process.env.SECRET_KEY, {
 		expiresIn: 86400
 	});
+
+	return token;
+};
+
+const sendVerificationEmail = (user, errorObject, res, req) => {
+	if (user.isVerified) {
+		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
+	}
 
 	var email = {
 		from: `no-reply@weebsandotakus.com`,
@@ -209,7 +272,7 @@ const sendVerificationEmail = (user, errorObject, res, req) => {
 		subject: `Account Verification`,
 		dynamic_template_data: {
 			username: user.username,
-			verificationUrl: req.headers.origin + `/verify/` + token
+			verificationUrl: req.headers.origin + `/verify/` + user.verificationToken
 		},
 		template_id: `d-58838a91d5bc48e6ac85a6ba95ec01ce`
 		// text: `Hello,\n\n` + `Please verify your account by clicking the link: \nhttp://` + req.headers.origin + `/confirmation/` + token + `.\n`
@@ -224,6 +287,29 @@ const sendVerificationEmail = (user, errorObject, res, req) => {
 		}
 
 		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
+	});
+};
+
+const sendPasswordResetEmail = (user, errorObject, res, req) => {
+	var email = {
+		from: `no-reply@weebsandotakus.com`,
+		to: user.email,
+		subject: `Password Reset`,
+		dynamic_template_data: {
+			username: user.username,
+			passwordResetUrl: req.headers.origin + `/password-change/` + user.verificationToken
+		},
+		template_id: `d-52babe08053c4c8699ab74081a7f20d3`
+	};
+
+	sgMail.send(email, err => {
+		if (err) {
+			addErrorMessages(errorObject, `Error ocurred while sending email.  Please contact administrators.`);
+			console.log(`Error: Password Reset Email: `, err);
+			return res.status(500).json(errorObject);
+		}
+
+		res.status(200).send(`A password reset email has been sent to ` + user.email + `. Check your spam.`);
 	});
 };
 
@@ -271,8 +357,10 @@ router.post(`/register`, (req, res, next) => {
 						email: req.body.email,
 						password: req.body.password,
 						username: req.body.username,
-						color: req.body.color
+						color: req.body.color,
+						verificationToken: createVerificationToken(user, errorObject, res)
 					});
+
 					// Hash password before saving in database
 					bcrypt.genSalt(10, (err, salt) => {
 						if (err) throw err;
@@ -326,7 +414,13 @@ router.post(`/verify`, (req, res, next) => {
 						return res.status(200).json(`User is already verified.`);
 					}
 
+					if (user.verificationToken !== token) {
+						addErrorMessages(errorObject, `Invalid token`);
+						return res.status(401).json(errorObject);
+					}
+
 					user.isVerified = true;
+					user.verificationToken = ``;
 					user.save().then(() => {
 						return res.status(200).send(`Email verified! Please login`);
 					});
@@ -351,10 +445,45 @@ router.post(`/verify/resend`, (req, res, next) => {
 
 	User.findOne({ email }, { upsert: false }).then(user => {
 		if (!user) {
-			return res.status(200);
+			return res.status(200).json(`A verification email has been sent to ` + email + `. Check your spam.`);
 		}
 
-		sendVerificationEmail(user, errorObject, res, req);
+		user.verificationToken = createVerificationToken(user, errorObject, res);
+		user.save()
+			.then(user => {
+				sendVerificationEmail(user, errorObject, res, req);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				return res.status(401).json(errorObject);
+			});
+	});
+});
+
+router.post(`/password/reset`, (req, res, next) => {
+	let errorObject = createErrorObject();
+
+	let email = req.body.email;
+
+	if (!email) {
+		addErrorMessages(errorObject, `Email is required`);
+		return res.status(400).json(errorObject);
+	}
+
+	User.findOne({ email }, { upsert: false }).then(user => {
+		if (!user) {
+			return res.status(200).json(`A password reset email has been sent to ` + email + `. Check your spam.`);
+		}
+
+		user.verificationToken = createVerificationToken(user, errorObject, res);
+		user.save()
+			.then(user => {
+				return sendPasswordResetEmail(user, errorObject, res, req);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				return res.status(401).json(errorObject);
+			});
 	});
 });
 
