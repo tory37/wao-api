@@ -17,28 +17,80 @@ const { addErrorMessages, createErrorObject, hasErrors } = require(`../../utils/
 router.get(`/`, (req, res, next) => {
 	const errorObject = createErrorObject();
 
-	if (hasErrors(errorObject)) {
-		return res.status(400).json(errorObject);
+	try {
+		if (hasErrors(errorObject)) {
+			return res.status(400).json(errorObject);
+		}
+
+		const nowTimestamp = moment().unix();
+
+		Event.find()
+		.then(events => {
+			return res.status(200).json(events);
+		})
+		.catch(err => {
+			addErrorMessages(errorObject, err);
+			return res.status(500).json(errorObject);
+		});
+	} catch (err) {
+		addErrorMessages(errorObject, err);
+		return res.status(500).json(errorObject);
 	}
+});
 
-	const nowTimestamp = moment().unix();
+router.get(`/past`, (req, res, next) => {
+	const errorObject = createErrorObject();
 
-	if (req.query.getPast) {
+	try {
+		if (hasErrors(errorObject)) {
+			return res.status(400).json(errorObject);
+		}
+
+		const nowTimestamp = moment().unix();
+
 		Event.find({
 			endTimestamp: {
 				$lt: nowTimestamp
 			}
-		}).then(events => {
+		})
+		.then(events => {
 			return res.status(200).json(events);
+		})
+		.catch(err => {
+			addErrorMessages(errorObject, err);
+			return res.status(500).json(errorObject);
 		});
-	} else {
+	} catch (err) {
+		addErrorMessages(errorObject, err);
+		return res.status(500).json(errorObject);
+	}
+});
+
+router.get(`/future`, (req, res, next) => {
+	const errorObject = createErrorObject();
+
+	try {
+		if (hasErrors(errorObject)) {
+			return res.status(400).json(errorObject);
+		}
+
+		const nowTimestamp = moment().unix();
+
 		Event.find({
 			endTimestamp: {
 				$gt: nowTimestamp
 			}
-		}).then(events => {
+		})
+		.then(events => {
 			return res.status(200).json(events);
+		})
+		.catch(err => {
+			addErrorMessages(errorObject, err);
+			return res.status(500).json(errorObject);
 		});
+	} catch (err) {
+		addErrorMessages(errorObject, err);
+		return res.status(500).json(errorObject);
 	}
 });
 

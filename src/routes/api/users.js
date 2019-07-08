@@ -448,6 +448,11 @@ router.post(`/verify/resend`, (req, res, next) => {
 			return res.status(200).json(`A verification email has been sent to ` + email + `. Check your spam.`);
 		}
 
+		if (user.isVerified) {
+			addErrorMessages(errorObject, 'Email address is already verified.');
+			return res.status(400).json(errorObject);
+		}
+
 		user.verificationToken = createVerificationToken(user, errorObject, res);
 		user.save()
 			.then(user => {
