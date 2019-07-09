@@ -357,8 +357,7 @@ router.post(`/register`, (req, res, next) => {
 						email: req.body.email,
 						password: req.body.password,
 						username: req.body.username,
-						color: req.body.color,
-						verificationToken: createVerificationToken(user, errorObject, res)
+						color: req.body.color
 					});
 
 					// Hash password before saving in database
@@ -370,9 +369,18 @@ router.post(`/register`, (req, res, next) => {
 							newUser
 								.save()
 								.then(user => {
-									sendVerificationEmail(user, errorObject, res, req);
+									user.verificationToken = createVerificationToken(user, errorObject, res);
+									user.save()
+										.then(updatedUser => {
+											sendVerificationEmail(user, errorObject, res, req);
+										})
+										.catch(err => {
+											throw err;
+										});
 								})
-								.catch(err => console.log(err));
+								.catch(err => {
+									throw err;
+								});
 						});
 					});
 				});
@@ -449,7 +457,7 @@ router.post(`/verify/resend`, (req, res, next) => {
 		}
 
 		if (user.isVerified) {
-			addErrorMessages(errorObject, 'Email address is already verified.');
+			addErrorMessages(errorObject, `Email address is already verified.`);
 			return res.status(400).json(errorObject);
 		}
 
