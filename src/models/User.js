@@ -11,6 +11,10 @@ const UserSchema = new Schema(
 			type: String,
 			required: true
 		},
+		username_lower: {
+			type: String,
+			required: true
+		},
 		roles: {
 			type: [String],
 			enum: [`ADMIN`, `NORMIE`],

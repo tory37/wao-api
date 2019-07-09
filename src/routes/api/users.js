@@ -74,14 +74,18 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 			return res.status(400).json(errorObject);
 		}
 
+		const email_lower = req.body.email.toLowerCase();
+
 		// Check if email exists
-		User.findOne({ email: req.body.email }, { upsert: false }).then(user => {
+		User.findOne({ email: email_lower }, { upsert: false }).then(user => {
 			if (user && user.id !== userId) {
 				addErrorMessages(errorObject, `Email already exists`);
 			}
 
-			User.findOne({ username: req.body.username }, { upsert: false }).then(user => {
-				if (user && user.id !== userId) {
+			const username_lower = req.body.username.toLowerCase();
+
+			User.findOne({ username_lower }, { upsert: false }).then(usernameUser => {
+				if (usernameUser && usernameUser.id !== userId) {
 					addErrorMessages(errorObject, `Username already exists`);
 				}
 
@@ -90,11 +94,12 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 				}
 
 				if (req.body.email) {
-					req.user.email = req.body.email;
+					req.user.email = email_lower;
 				}
 
 				if (req.body.username) {
 					req.user.username = req.body.username;
+					req.user.username_lower = username_lower;
 				}
 
 				if (req.body.imageUrl) {
@@ -342,8 +347,10 @@ router.post(`/register`, (req, res, next) => {
 					return res.status(400).json(errorObject);
 				}
 
+				const username_lower = req.body.username.toLowerCase();
+
 				// Check is username exists
-				User.findOne({ username: req.body.username }, { upsert: false }).then(user => {
+				User.findOne({ username_lower }, { upsert: false }).then(user => {
 					if (user) {
 						addErrorMessages(errorObject, `Username already exists`);
 						return res.status(400).json(errorObject);
@@ -354,9 +361,10 @@ router.post(`/register`, (req, res, next) => {
 					}
 
 					const newUser = new User({
-						email: req.body.email,
+						email: req.body.email.toLowerCase(),
 						password: req.body.password,
 						username: req.body.username,
+						username_lower: username_lower,
 						color: req.body.color
 					});
 
@@ -513,7 +521,7 @@ router.post(`/login`, (req, res) => {
 		console.log(`Not Valid`);
 		return res.status(400).json(errorObject);
 	}
-	const email = req.body.email;
+	const email = req.body.email.toLowerCase();
 	const password = req.body.password;
 	// Find user by email
 	User.findOne({ email }).then(user => {
