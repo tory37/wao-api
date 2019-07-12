@@ -34,7 +34,7 @@ const UserSchema = new Schema(
 		color: {
 			type: String,
 			required: true,
-			default: `black`
+			default: `#282929`
 		},
 		isVerified: {
 			type: Boolean,
