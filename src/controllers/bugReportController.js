@@ -27,11 +27,13 @@ controller.getAllBugReports = (req, res, next) => {
 
 	try {
 		BugReport.find()
+			.populate(`reporter`, `username _id email`)
 			.then(bugReports => {
 				res.status(200).json(bugReports);
 			})
 			.catch(err => {
-				throw err;
+				addErrorMessages(errorObject, err);
+				res.status(500).json(errorObject);
 			});
 	} catch (err) {
 		addErrorMessages(errorObject, err);
@@ -59,7 +61,7 @@ controller.createBugReport = (req, res, next) => {
 		const { _id } = req.user._id;
 		const newBugReport = new BugReport({
 			description,
-			reporterId: _id
+			reporter: _id
 		});
 
 		newBugReport

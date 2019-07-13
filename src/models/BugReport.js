@@ -11,14 +11,15 @@ const BugReportSchema = new Schema(
 			type: String,
 			required: true
 		},
-		reporterId: {
+		reporter: {
 			type: Schema.Types.ObjectId,
-			required: true
+			required: true,
+			ref: `users`
 		},
 		status: {
-			type: [String],
-			enum: [`OPEN`, `FIXED`, `REJECTED`],
-			default: [`OPEN`]
+			type: String,
+			enum: [`OPEN`, `FIXED`, `WONTFIX`],
+			default: `OPEN`
 		}
 	},
 	{
