@@ -70,7 +70,89 @@ controller.createBugReport = (req, res, next) => {
 				res.status(200).json(`Successfully created bug report.`);
 			})
 			.catch(err => {
-				throw err;
+				addErrorMessages(errorObject, err);
+				res.status(500).json(errorObject);
+			});
+	} catch (err) {
+		return next(err);
+	}
+};
+
+controller.setOpen = (req, res, next) => {
+	let errorObject = createErrorObject();
+
+	try {
+		const reportId = req.params.id;
+
+		if (!reportId) {
+			addErrorMessages(errorObject, `Report id invalid`);
+			return res.status(404).json(errorObject);
+		}
+
+		const filter = { _id: reportId };
+		const update = { status: `OPEN` };
+
+		BugReport.findOneAndUpdate(filter, update, { new: true })
+			.then(report => {
+				return res.status(200).json(report);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				res.status(500).json(errorObject);
+			});
+	} catch (err) {
+		return next(err);
+	}
+};
+
+controller.setFixed = (req, res, next) => {
+	let errorObject = createErrorObject();
+
+	try {
+		const reportId = req.params.id;
+
+		if (!reportId) {
+			addErrorMessages(errorObject, `Report id invalid`);
+			return res.status(404).json(errorObject);
+		}
+
+		const filter = { _id: reportId };
+		const update = { status: `FIXED` };
+
+		BugReport.findOneAndUpdate(filter, update, { new: true })
+			.then(report => {
+				return res.status(200).json(report);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				res.status(500).json(errorObject);
+			});
+	} catch (err) {
+		return next(err);
+	}
+};
+
+controller.setRejected = (req, res, next) => {
+	let errorObject = createErrorObject();
+
+	try {
+		const reportId = req.params.id;
+
+		if (!reportId) {
+			addErrorMessages(errorObject, `Report id invalid`);
+			return res.status(404).json(errorObject);
+		}
+
+		const filter = { _id: reportId };
+		const update = { status: `WONTFIX` };
+
+		BugReport.findOneAndUpdate(filter, update, { new: true })
+			.then(report => {
+				return res.status(200).json(report);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				res.status(500).json(errorObject);
 			});
 	} catch (err) {
 		return next(err);
