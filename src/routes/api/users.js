@@ -7,8 +7,7 @@ const jwt = require(`jsonwebtoken`);
 var passport = require(`passport`);
 
 // Emails
-const sgMail = require(`@sendgrid/mail`);
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const { sendVerificationEmail, sendPasswordResetEmail } = require(`../../utils/emailHandler`);
 
 // Load input validation
 const isRegisterInputValid = require(`../../validation/register`);
@@ -44,6 +43,7 @@ router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 				updatedAt: user.updatedAt,
 				imageUrl: user.imageUrl,
 				color: user.color,
+				subscriptions: user.subscriptions,
 				_id: user._id
 			});
 		}
@@ -110,6 +110,10 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 					req.user.color = req.body.color;
 				}
 
+				if (req.body.subscriptions) {
+					req.user.subscriptions = req.body.subscriptions;
+				}
+
 				req.user
 					.save()
 					.then(user => {
@@ -121,6 +125,7 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 							createdAt: user.createdAt,
 							imageUrl: user.imageUrl,
 							color: user.color,
+							subscriptions: user.subscriptions,
 							_id: user._id
 						});
 					})
@@ -264,58 +269,6 @@ const createVerificationToken = (user, errorObject, res) => {
 	});
 
 	return token;
-};
-
-const sendVerificationEmail = (user, errorObject, res, req) => {
-	if (user.isVerified) {
-		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
-	}
-
-	var email = {
-		from: `no-reply@weebsandotakus.com`,
-		to: user.email,
-		subject: `Account Verification`,
-		dynamic_template_data: {
-			username: user.username,
-			verificationUrl: req.headers.origin + `/verify/` + user.verificationToken
-		},
-		template_id: `d-58838a91d5bc48e6ac85a6ba95ec01ce`
-		// text: `Hello,\n\n` + `Please verify your account by clicking the link: \nhttp://` + req.headers.origin + `/confirmation/` + token + `.\n`
-	};
-
-	// Send the email
-	sgMail.send(email, err => {
-		if (err) {
-			addErrorMessages(errorObject, `Error ocurred while sending email.  Please contact administrators.`);
-			console.log(`Error: Registration Email: `, err);
-			return res.status(500).json(errorObject);
-		}
-
-		res.status(200).send(`A verification email has been sent to ` + user.email + `. Check your spam.`);
-	});
-};
-
-const sendPasswordResetEmail = (user, errorObject, res, req) => {
-	var email = {
-		from: `no-reply@weebsandotakus.com`,
-		to: user.email,
-		subject: `Password Reset`,
-		dynamic_template_data: {
-			username: user.username,
-			passwordResetUrl: req.headers.origin + `/password-change/` + user.verificationToken
-		},
-		template_id: `d-52babe08053c4c8699ab74081a7f20d3`
-	};
-
-	sgMail.send(email, err => {
-		if (err) {
-			addErrorMessages(errorObject, `Error ocurred while sending email.  Please contact administrators.`);
-			console.log(`Error: Password Reset Email: `, err);
-			return res.status(500).json(errorObject);
-		}
-
-		res.status(200).send(`A password reset email has been sent to ` + user.email + `. Check your spam.`);
-	});
 };
 
 // @route POST api/users/register
@@ -565,6 +518,7 @@ router.post(`/login`, (req, res) => {
 								createdAt: user.createdAt,
 								imageUrl: user.imageUrl,
 								color: user.color,
+								subscriptions: user.subscriptions,
 								_id: user._id
 							}
 						});
