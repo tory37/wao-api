@@ -75,16 +75,16 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 		}
 
 		// Check if email exists
-		User.findOne({ email: req.user.email }, { upsert: false }).then(user => {
-			if (user && user.id !== userId) {
+		User.findOne({ email: req.body.email, _id: { $ne: req.user._id } }, { upsert: false }).then(user => {
+			if (user) {
 				addErrorMessages(errorObject, `Email already exists`);
 			}
 
-			User.findOne({ username: req.user.username }, { upsert: false }).then(usernameUser => {
+			User.findOne({ username: req.body.username, _id: { $ne: req.user._id } }, { upsert: false }).then(usernameUser => {
 				const oldEmail = req.user.email;
 				const newEmail = req.body.email;
 
-				if (usernameUser && usernameUser.id !== userId) {
+				if (usernameUser) {
 					addErrorMessages(errorObject, `Username already exists`);
 				}
 

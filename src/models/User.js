@@ -13,7 +13,8 @@ const UserSchema = new Schema(
 		},
 		username_lower: {
 			type: String,
-			required: true
+			required: true,
+			unique: true
 		},
 		roles: {
 			type: [String],
@@ -22,7 +23,8 @@ const UserSchema = new Schema(
 		},
 		email: {
 			type: String,
-			required: true
+			required: true,
+			unique: true
 		},
 		password: {
 			type: String,
