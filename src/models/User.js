@@ -42,6 +42,11 @@ const UserSchema = new Schema(
 		},
 		verificationToken: {
 			type: String
+		},
+		subscriptions: {
+			type: [String],
+			enum: [`EVENTS`],
+			default: [`EVENTS`]
 		}
 	},
 	{

@@ -67,7 +67,7 @@ controller.createBugReport = (req, res, next) => {
 		newBugReport
 			.save()
 			.then(bugReport => {
-				res.status(200).json(`Successfully created bug report.`);
+				res.status(200).json(bugReport);
 			})
 			.catch(err => {
 				addErrorMessages(errorObject, err);
