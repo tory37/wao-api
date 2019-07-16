@@ -7,7 +7,7 @@ const jwt = require(`jsonwebtoken`);
 var passport = require(`passport`);
 
 // Emails
-const { sendVerificationEmail, sendPasswordResetEmail } = require(`../../utils/emailHandler`);
+const { sendVerificationEmail, sendPasswordResetEmail, sendEmailChangeConfirmation, sendPasswordChangeConfirmation } = require(`../../utils/emailHandler`);
 
 // Load input validation
 const isRegisterInputValid = require(`../../validation/register`);
@@ -74,17 +74,16 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 			return res.status(400).json(errorObject);
 		}
 
-		const email_lower = req.body.email.toLowerCase();
-
 		// Check if email exists
-		User.findOne({ email: email_lower }, { upsert: false }).then(user => {
+		User.findOne({ email: req.user.email }, { upsert: false }).then(user => {
 			if (user && user.id !== userId) {
 				addErrorMessages(errorObject, `Email already exists`);
 			}
 
-			const username_lower = req.body.username.toLowerCase();
+			User.findOne({ username: req.user.username }, { upsert: false }).then(usernameUser => {
+				const oldEmail = req.user.email;
+				const newEmail = req.body.email;
 
-			User.findOne({ username_lower }, { upsert: false }).then(usernameUser => {
 				if (usernameUser && usernameUser.id !== userId) {
 					addErrorMessages(errorObject, `Username already exists`);
 				}
@@ -93,20 +92,26 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 					return res.status(400).json(errorObject);
 				}
 
-				if (req.body.email) {
-					req.user.email = email_lower;
+				let shouldSendEmailChangeConfirmation = false;
+				if (req.body.email && req.body.email) {
+					const email_lower = req.body.email.toLowerCase();
+					if (user.email !== email_lower) {
+						req.user.email = email_lower;
+						shouldSendEmailChangeConfirmation = true;
+					}
 				}
 
-				if (req.body.username) {
+				if (req.body.username && req.body.username !== req.user.username) {
 					req.user.username = req.body.username;
+					const username_lower = req.body.username.toLowerCase();
 					req.user.username_lower = username_lower;
 				}
 
-				if (req.body.imageUrl) {
+				if (req.body.imageUrl && req.body.imageUrl !== req.user.imageUrl) {
 					req.user.imageUrl = req.body.imageUrl;
 				}
 
-				if (req.body.color) {
+				if (req.body.color && req.body.color !== req.user.color) {
 					req.user.color = req.body.color;
 				}
 
@@ -117,17 +122,25 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 				req.user
 					.save()
 					.then(user => {
-						res.status(200).json({
-							username: user.username,
-							email: user.email,
-							updatedAt: user.updatedAt,
-							roles: user.roles,
-							createdAt: user.createdAt,
-							imageUrl: user.imageUrl,
-							color: user.color,
-							subscriptions: user.subscriptions,
-							_id: user._id
-						});
+						const onFinish = () => {
+							res.status(200).json({
+								username: user.username,
+								email: user.email,
+								updatedAt: user.updatedAt,
+								roles: user.roles,
+								createdAt: user.createdAt,
+								imageUrl: user.imageUrl,
+								color: user.color,
+								subscriptions: user.subscriptions,
+								_id: user._id
+							});
+						};
+
+						if (shouldSendEmailChangeConfirmation) {
+							sendEmailChangeConfirmation(oldEmail, newEmail, res, req, onFinish);
+						} else {
+							onFinish();
+						}
 					})
 					.catch(err => {
 						addErrorMessages(errorObject, err.message);
@@ -187,10 +200,14 @@ router.post(`/password`, passport.authenticate(`jwt`, { session: false }), (req,
 							},
 							(err, token) => {
 								if (err) throw err;
-								res.json({
-									success: true,
-									token: `Bearer ` + token
-								});
+								const onFinish = () => {
+									res.json({
+										success: true,
+										token: `Bearer ` + token
+									});
+								};
+
+								sendPasswordChangeConfirmation(updatedUser, res, req, onFinish);
 							}
 						);
 					})
@@ -380,7 +397,7 @@ router.post(`/verify`, (req, res, next) => {
 					}
 
 					if (user.isVerified) {
-						return res.status(200).json(`User is already verified.`);
+						return res.status(200).json(`Email is already verified. Please login.`);
 					}
 
 					if (user.verificationToken !== token) {

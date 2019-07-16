@@ -6,6 +6,8 @@ const moment = require(`moment`);
 const usersHelper = require(`../../utils/usersHelper`);
 var passport = require(`passport`);
 
+const { sendNewEventNotifications } = require(`../../utils/emailHandler`);
+
 // Load input validation
 const isEventObjectValid = require(`../../validation/eventObject`);
 // const isEventUpdateInputValid = require(`../../validation/eventUpdate`);
@@ -13,6 +15,9 @@ const isEventObjectValid = require(`../../validation/eventObject`);
 // Load Event model
 const Event = require(`../../models/Event`);
 const { addErrorMessages, createErrorObject, hasErrors } = require(`../../utils/errorHandler`);
+
+// Load User Model
+const User = require(`../../models/User`);
 
 router.get(`/`, (req, res, next) => {
 	const errorObject = createErrorObject();
@@ -25,13 +30,13 @@ router.get(`/`, (req, res, next) => {
 		const nowTimestamp = moment().unix();
 
 		Event.find()
-		.then(events => {
-			return res.status(200).json(events);
-		})
-		.catch(err => {
-			addErrorMessages(errorObject, err);
-			return res.status(500).json(errorObject);
-		});
+			.then(events => {
+				return res.status(200).json(events);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				return res.status(500).json(errorObject);
+			});
 	} catch (err) {
 		addErrorMessages(errorObject, err);
 		return res.status(500).json(errorObject);
@@ -53,13 +58,13 @@ router.get(`/past`, (req, res, next) => {
 				$lt: nowTimestamp
 			}
 		})
-		.then(events => {
-			return res.status(200).json(events);
-		})
-		.catch(err => {
-			addErrorMessages(errorObject, err);
-			return res.status(500).json(errorObject);
-		});
+			.then(events => {
+				return res.status(200).json(events);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				return res.status(500).json(errorObject);
+			});
 	} catch (err) {
 		addErrorMessages(errorObject, err);
 		return res.status(500).json(errorObject);
@@ -81,20 +86,20 @@ router.get(`/future`, (req, res, next) => {
 				$gt: nowTimestamp
 			}
 		})
-		.then(events => {
-			return res.status(200).json(events);
-		})
-		.catch(err => {
-			addErrorMessages(errorObject, err);
-			return res.status(500).json(errorObject);
-		});
+			.then(events => {
+				return res.status(200).json(events);
+			})
+			.catch(err => {
+				addErrorMessages(errorObject, err);
+				return res.status(500).json(errorObject);
+			});
 	} catch (err) {
 		addErrorMessages(errorObject, err);
 		return res.status(500).json(errorObject);
 	}
 });
 
-// @route PUT api/users/register
+// @route PUT
 // @desc
 // @access Private
 router.put(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, next) => {
@@ -123,7 +128,20 @@ router.put(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 
 			newEvent
 				.save()
-				.then(user => res.json(newEvent))
+				.then(event => {
+					const onFinish = () => {
+						res.json(newEvent);
+					};
+
+					User.find({ subscriptions: `EVENTS` })
+						.then(users => {
+							sendNewEventNotifications(users, newEvent, res, req, onFinish);
+						})
+						.catch(err => {
+							console.log(`Error: Did not send email notifications for new event.`, err);
+							onFinish();
+						});
+				})
 				.catch(err => {
 					addErrorMessages(errorObject, err.message);
 					return res.status(400).json(errorObject);
