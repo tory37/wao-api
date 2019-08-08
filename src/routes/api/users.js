@@ -51,6 +51,20 @@ router.get(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, nex
 });
 
 router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, next) => {
+	if (!req.body) {
+		return res.status(200).json({
+			username: req.user.username,
+			email: req.user.email,
+			updatedAt: req.user.updatedAt,
+			roles: req.user.roles,
+			createdAt: req.user.createdAt,
+			imageUrl: req.user.imageUrl,
+			color: req.user.color,
+			subscriptions: req.user.subscriptions,
+			_id: req.user._id
+		});
+	}
+
 	const errorObject = createErrorObject();
 
 	const userId = req.user.id;
@@ -93,9 +107,9 @@ router.post(`/`, passport.authenticate(`jwt`, { session: false }), (req, res, ne
 				}
 
 				let shouldSendEmailChangeConfirmation = false;
-				if (req.body.email && req.body.email) {
+				if (req.body.email) {
 					const email_lower = req.body.email.toLowerCase();
-					if (user.email !== email_lower) {
+					if (req.user.email !== email_lower) {
 						req.user.email = email_lower;
 						shouldSendEmailChangeConfirmation = true;
 					}
