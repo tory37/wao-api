@@ -52,10 +52,10 @@ controller.createBugReport = (req, res, next) => {
 			return res.status(422).json(errorObject);
 		}
 
-		if (!isAdmin(req.user)) {
-			addErrorMessages(errorObject, `Unathorized`);
-			return res.status(401).json(errorObject);
-		}
+		// if (!isAdmin(req.user)) {
+		// 	addErrorMessages(errorObject, `Unathorized`);
+		// 	return res.status(401).json(errorObject);
+		// }
 
 		const { description } = req.body;
 		const { _id } = req.user._id;
