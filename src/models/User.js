@@ -11,6 +11,11 @@ const UserSchema = new Schema(
 			type: String,
 			required: true
 		},
+		username_lower: {
+			type: String,
+			required: true,
+			unique: true
+		},
 		roles: {
 			type: [String],
 			enum: [`ADMIN`, `NORMIE`],
@@ -18,11 +23,32 @@ const UserSchema = new Schema(
 		},
 		email: {
 			type: String,
-			required: true
+			required: true,
+			unique: true
 		},
 		password: {
 			type: String,
 			required: true
+		},
+		imageUrl: {
+			type: String
+		},
+		color: {
+			type: String,
+			required: true,
+			default: `#282929`
+		},
+		isVerified: {
+			type: Boolean,
+			default: false
+		},
+		verificationToken: {
+			type: String
+		},
+		subscriptions: {
+			type: [String],
+			enum: [`EVENTS`],
+			default: [`EVENTS`]
 		}
 	},
 	{

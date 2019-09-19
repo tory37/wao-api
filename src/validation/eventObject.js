@@ -21,13 +21,13 @@ module.exports = (data, errorObject) => {
 
 	if (data.startTimestamp.length === 0) {
 		addErrorMessages(errorObject, `Start timestamp is required`);
-	} else if (typeof data.startTimestamp !== `number`) {
+	} else if (typeof parseFloat(data.startTimestamp) !== `number`) {
 		addErrorMessages(errorObject, `Start Timestamp is not a valid timestamp`);
 	}
 
 	if (data.endTimestamp.length === 0) {
 		addErrorMessages(errorObject, `End timestamp is required`);
-	} else if (typeof data.endTimestamp !== `number`) {
+	} else if (typeof parseFloat(data.endTimestamp) !== `number`) {
 		addErrorMessages(errorObject, `End Timestamp is not a valid timestamp`);
 	}
 
