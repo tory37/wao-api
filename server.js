@@ -21,9 +21,9 @@ app.use(cors());
 
 // Bodyparser middleware
 app.use(
-	bodyParser.urlencoded({
-		extended: false
-	})
+  bodyParser.urlencoded({
+    extended: false
+  })
 );
 app.use(bodyParser.json());
 
@@ -31,9 +31,9 @@ app.use(bodyParser.json());
 const db = process.env.MONGO_URI;
 // Connect to MongoDB
 mongoose
-	.connect(db, { useNewUrlParser: true })
-	.then(() => console.log(`MongoDB successfully connected`))
-	.catch(err => console.log(err));
+  .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log(`MongoDB successfully connected`))
+  .catch(err => console.log(err));
 
 // Passport middleware
 app.use(passport.initialize());
@@ -42,7 +42,7 @@ require(`./config/passport`)(passport);
 
 // Routes
 app.get(`/`, function(req, res) {
-	res.send(JSON.stringify({ Hello: `World` }));
+  res.send(JSON.stringify({ Hello: `World` }));
 });
 app.use(`/api/users`, users);
 app.use(`/api/events`, events);
